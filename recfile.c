@@ -14,16 +14,13 @@ extern int errnum;
 int main() {
   int errnum = errno;
   int nread; // number of bytes read by read()
-
-  const char RECORD_FORMAT[] = "RECORD-%d";
-  const int BUFFER_SIZE = sizeof(RECORD_FORMAT);
   FILE* fp;
-  char* userBuffer;
-  userBuffer = (char *) malloc(100 * sizeof(char));
-  int userResponse = 0;
+  char recordNumber[128]; // first user input captured - record they want to change
+  char newNumber[128]; // second user input captured - record they want to change
 
   fp = fopen("records.dat", "w");
   
+  // terminates program if there is an error open file and returns error message
   if(fp == NULL) {
     fprintf(stderr, "Error in opening the file.\nValue of errno: %d\n", errnum);
     exit(EXIT_FAILURE);
@@ -31,30 +28,41 @@ int main() {
 
   printf("Populating records.dat with Records...\n");
 
+  // populating records.data with 100 RECORD struct instances
   for(int i = 1; i < 101; ++i){
-    RECORD currRecord;
-    currRecord.integer = i;
+    RECORD currRecord; // init current record
 
-    sprintf(currRecord.string, "RECORD-%d\n", i);
-    
-    fwrite(currRecord.string, 1, BUFFER_SIZE, fp);
-    //fwrite(currRecord, sizeof(currRecord), 100, fp);
+    // assign values to RECORD struct instance
+    currRecord.integer = i; // assign number to record
+    sprintf(currRecord.string, "RECORD-%d\n", i); // assign string to record
+    // write out current record to records.dat
+    fwrite(&currRecord, sizeof(RECORD), 100, fp);
   }
 
   printf("Success: Finished populating records.dat\n");
-
-  /*printf("Enter the Record Number you would like to change: \n");
-
-  nread = read(0, userBuffer, 128);
-  userBuffer[nread] = '\0';
-  */
-  if(nread == -1 ){
-    fprintf(stderr, "Error occured in reading user input, errno value is: %d\n", errnum);
-    fclose(fp);
+  // capture first user input - record number want to change
+  printf("Enter the record number you want to update: \n");
+  // input error handling
+  if(fgets(recordNumber, sizeof(recordNumber), stdin) == NULL){
+    printf("ERROR: User input was not successfully collected\n");
     exit(EXIT_FAILURE);
   }
-
-  //printf("User Input: %d\n", userBuffer);
+  // collect user input
+  else{
+    printf("SUCCESS: Input captured\nYou entered: ");
+    puts(recordNumber);
+  }
+  // capture second user input - number want to assign to record
+  printf("Enter the new number you want to assign the record: \n");
+  // input error handling
+  if(fgets(newNumber, sizeof(newNumber), stdin) == NULL){
+    printf("ERROR: User input was not successfully collected\n");
+  }
+  // collect user input
+  else{
+    printf("SUCCESS: Input captured\nYou entered: ");
+    puts(newNumber);
+  }
 
   fclose(fp);
 
