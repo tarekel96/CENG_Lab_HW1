@@ -6,12 +6,14 @@
 #include <stdio.h>
 #include <errno.h>
 
+// RECORD struct definition
 #define NRECORDS 100
 typedef struct {
   int integer;
   char string[24];
 } RECORD;
 
+// var holding errno value
 extern int errnum;
 
 int main(int argc, char* argv[]) {
@@ -22,11 +24,11 @@ int main(int argc, char* argv[]) {
 
   int errnum = errno;
   int nread; // number of bytes read by read()
-  FILE* fp;
+  FILE* fp; // file stream pointer
   char recordNumberBuffer[128]; // first user input captured - record they want to change
-  int recordNumber = (int)argv[1];
+  int recordNumber = (int)argv[1]; // record number of the record user wants to update
   char newNumberBuffer[128]; // second user input captured - record they want to change
-  int newNumber = (int)argv[2];
+  int newNumber = (int)argv[2]; // new record number value user wants to assign
 
   fp = fopen("records.dat", "w"); // write mode
   
@@ -51,32 +53,9 @@ int main(int argc, char* argv[]) {
   }
 
   printf("Success: Finished populating records.dat\n");
+ 
   fclose(fp); // close file to save
-/*
-  // capture first user input - record number want to change
-  printf("Enter the record number you want to update: \n");
-  // input error handling
-  if(fgets(recordNumberBuffer, sizeof(recordNumberBuffer), stdin) == NULL){
-    printf("ERROR: User input was not successfully collected\n");
-    exit(EXIT_FAILURE);
-  }
-  // collect user input
-  else{
-    sscanf(recordNumberBuffer, "%d", &recordNumber);
-    printf("Successfully captured input.\nYou entered %d\n", recordNumber);
-  }
-  // capture second user input - number want to assign to record
-  printf("Enter the new number you want to assign the record: \n");
-  // input error handling
-  if(fgets(newNumberBuffer, sizeof(newNumberBuffer), stdin) == NULL){
-    printf("ERROR: User input was not successfully collected\n");
-  }
-  // collect user input
-  else{
-    sscanf(newNumberBuffer, "%d", &newNumber);
-    printf("Successfully captured input.\nYou entered: %d\n", newNumber);
-  }
-*/
+ 
   fp = fopen("records.dat", "r+"); // read/update mode
 
   // create the new record struct instance
@@ -86,15 +65,13 @@ int main(int argc, char* argv[]) {
   sprintf(newRecord.string, "RECORD-%d", newNumber);
 
   // fseek args: [file pointer, number of bytes to offset by, origin]
- /* 
-  fseek(fp, recordNumber * sizeof(RECORD), SEEK_SET);
-  fwrite(&newRecord, sizeof(RECORD), 1, fp);
-*/
-  while(fread(&newRecord, sizeof(RECORD), 1, fp)){
-    fseek(fp, recordNumber * sizeof(RECORD), SEEK_SET);
-    fwrite(&newRecord, sizeof(RECORD), 1, fp);
-  }
 
+  fread(&newRecord, sizeof(RECORD), 1, fp); 
+  int nfseek = fseek(fp, recordNumber * sizeof(RECORD), SEEK_SET);
+  printf("nfseek: %i\n",nfseek);
+  //fflush(fp);
+  fwrite(&newRecord, sizeof(RECORD), 1, fp);
+ 
   fclose(fp);
 /* 
   printf("newRecord number: %i\n", newRecord.integer);
