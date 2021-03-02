@@ -7,6 +7,11 @@
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
+/*
+ * @name: recfile.c
+ * @authors: Tarek El-Hajjaoui & Tavid Terizan
+ * @version: 1.0
+*/
 
 // RECORD struct definition
 #define NRECORDS 100
