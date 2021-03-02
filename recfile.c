@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
+#include <stdbool.h>
 
 // RECORD struct definition
 #define NRECORDS 100
@@ -17,19 +19,14 @@ typedef struct {
 extern int errnum;
 
 int main(int argc, char* argv[]) {
-  if(argc != 3){
-    printf("ERROR: No arguments were provided.\n Please enter 2 arguments.\n");
-    exit(EXIT_FAILURE);
-  }
 
-  int errnum = errno;
-  int nread; // number of bytes read by read()
-  FILE* fp; // file stream pointer
-  char recordNumberBuffer[128]; // first user input captured - record they want to change
-  int recordNumber = (int)argv[1]; // record number of the record user wants to update
-  char newNumberBuffer[128]; // second user input captured - record they want to change
-  int newNumber = (int)argv[2]; // new record number value user wants to assign
-
+  int errnum = errno, nread;
+  int recordNumber, newNumber; // record number of the record user wants to update
+  char recordNumberBuffer[128], newNumberBuffer[128], out[24]; // first user input captured - record they want to change
+  bool check = 1;
+  FILE* fp; // file stream pointer  
+  RECORD currRecord; // init current record
+  
   fp = fopen("records.dat", "w"); // write mode
   
   // terminates program if there is an error open file and returns error message
@@ -38,57 +35,58 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  printf("Populating records.dat with Records...\n");
-
-  // populating records.data with 100 RECORD struct instances
+  printf("Populating records.dat with Records");
+                                                      // populating records.data with 100 RECORD struct instances
   for(int i = 1; i < 101; ++i){
-    RECORD currRecord; // init current record
-
-    // assign values to RECORD struct instance
-    currRecord.integer = i; // assign number to record
-    sprintf(currRecord.string, "RECORD-%d", i); // assign string to record
-    // write out current record to records.dat
-    fwrite(&currRecord, sizeof(RECORD), 1, fp);
-    // args: [point where data is being stored, size of object, count, file pointer
+    if(i == 33 || i == 66 || i == 99){
+      printf(".");
+    }
+    currRecord.integer = i;                           // assign number to record
+    sprintf(currRecord.string, "RECORD-%d", i);       // assign string to record
+    fwrite(&currRecord, sizeof(currRecord), 1, fp);   // write out current record to records.dat
+  }
+  fclose(fp);                                         // close file to save
+  printf("\nSuccess: Finished populating records.dat\n");
+  
+  if(argc != 3){                                      // if no arguments entered prompt user for information
+   while(1){
+       printf("Enter the record number you want to update\nRecord Number: ");
+       read(0, (void*)recordNumberBuffer, 128);
+       sscanf(recordNumberBuffer, "%d", &recordNumber);
+       if(recordNumber < 1 || recordNumber > 100){    // check to make sure record is in directory
+         printf("Make sure number is between 1 & 100\n");
+       }
+       else
+       {
+         break;
+       }
+    }
+    printf("What would you like to update it to?\nEntry: ");
+    read(0, (void*)newNumberBuffer, 128);
+    sscanf(newNumberBuffer, "%d", &newNumber);
+  }
+  else                                                // else use arguments provided in command prompt
+  {
+   recordNumber = atoi(argv[1]);    
+   newNumber = atoi(argv[2]);
   }
 
-  printf("Success: Finished populating records.dat\n");
- 
-  fclose(fp); // close file to save
- 
-  fp = fopen("records.dat", "r+"); // read/update mode
-
-  // create the new record struct instance
-  RECORD newRecord;
-  // assign user input values to struct instance fields
-  newRecord.integer = newNumber;
-  sprintf(newRecord.string, "RECORD-%d", newNumber);
-
-  // fseek args: [file pointer, number of bytes to offset by, origin]
-
-  fread(&newRecord, sizeof(RECORD), 1, fp); 
-  int nfseek = fseek(fp, recordNumber * sizeof(RECORD), SEEK_SET);
-  printf("nfseek: %i\n",nfseek);
-  //fflush(fp);
-  fwrite(&newRecord, sizeof(RECORD), 1, fp);
- 
-  fclose(fp);
-/* 
-  printf("newRecord number: %i\n", newRecord.integer);
-  printf("newRecord string: %s\n", newRecord.string);
-*/
-  fp = fopen("records.dat", "r");
-
-  char currentString[8];
-  RECORD loopRecord;
-  int count = 0;
-  while(fread(&loopRecord, sizeof(RECORD), 1, fp)){
-    printf("%s\n", loopRecord.string);
-    ++count;
+  fp = fopen("records.dat", "r+");                    // open for read/write
+  fseek(fp, (recordNumber-1)*sizeof(RECORD), SEEK_SET);        // find location of record and read into variable
+  fread(&currRecord, sizeof(currRecord), 1, fp);
+  
+  currRecord.integer = newNumber;                        // overwrite variables
+  sprintf(currRecord.string, "RECORD-%d", newNumber); 
+  fseek(fp, (recordNumber-1)*sizeof(RECORD), SEEK_SET);
+  fwrite(&currRecord, sizeof(RECORD), 1, fp);            // write back to file
+  
+  fseek(fp, 0, SEEK_SET);                                // reset pointer to beginning of file
+  for(int i = 0; i < 100; ++i){
+   fread(&currRecord, sizeof(RECORD), 1, fp);
+   sprintf(out, "%s\n", currRecord.string);
+   write(1, out, strlen(out));                           // print entire directory to screen
   }
-
-  printf("%i\n", count);
-
+ 
   fclose(fp);
 
   exit(EXIT_SUCCESS);
